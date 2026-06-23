@@ -37,20 +37,20 @@
 ---
 
 ## 系統架構
-資料來源網站
-    ↓
-Python 爬蟲 / Selenium
-    ↓
-資料清理與整理
-    ↓
-Render PostgreSQL 資料庫
-    ↓
-Flask 後端系統
-    ↓
-HTML / CSS / JavaScript 前端頁面
-    ↓
-Render 網站部署
-    ↓
+資料來源網站<br>
+    ↓<br>
+Python 爬蟲 / Selenium<br>
+    ↓<br>
+資料清理與整理<br>
+    ↓<br>
+Render PostgreSQL 資料庫<br>
+    ↓<br>
+Flask 後端系統<br>
+    ↓<br>
+HTML / CSS / JavaScript 前端頁面<br>
+    ↓<br>
+Render 網站部署<br>
+    ↓<br>
 使用者查詢與分析 0050 ETF 資料
 
 ---
