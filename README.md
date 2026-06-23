@@ -36,6 +36,25 @@
 
 ---
 
+## 系統架構
+資料來源網站
+    ↓
+Python 爬蟲 / Selenium
+    ↓
+資料清理與整理
+    ↓
+Render PostgreSQL 資料庫
+    ↓
+Flask 後端系統
+    ↓
+HTML / CSS / JavaScript 前端頁面
+    ↓
+Render 網站部署
+    ↓
+使用者查詢與分析 0050 ETF 資料
+
+---
+
 ## 環境開發工具
 * **虛擬環境管理**：Docker / Docker Compose
 * **後端框架**：Flask
