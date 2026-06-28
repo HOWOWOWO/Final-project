@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>0050 分析</title>
+    <title>ETF 資料選單</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -13,16 +13,15 @@
         <a href="/etf">ETF 資料</a>
     </nav>
 
-    <h1>0050 ETF 分析</h1>
+    <h1>0050 ETF 資料分類</h1>
 
-    <h2>投資特色</h2>
     <ul>
-        <li>分散投資台灣大型企業</li>
-        <li>適合長期投資</li>
-        <li>交易方便，資訊透明</li>
+        {% for item in etf_items %}
+            <li>
+                <a href="{{ item.url }}">{{ item.title }}</a>
+                ：{{ item.description }}
+            </li>
+        {% endfor %}
     </ul>
-
-    <h2>未來功能</h2>
-    <p>之後可以加入成份股、股利資料、殖利率分析與圖表視覺化。</p>
 </body>
 </html>
