@@ -56,7 +56,7 @@ def etf_menu():
         {
             "title": "Yahoo 0050 資料整理",
             "url": "/yahoo_0050",
-            "description": "整理 Yahoo 股市中的 0050 持股分析、資產分佈與股利資料。"
+            "description": "整理 Yahoo 股市中的 0050 持股分析、股利資料與技術分析摘要。"
         },
     ]
 
@@ -130,9 +130,10 @@ def yahoo_0050():
         ["股票名稱", "元大台灣50"],
         ["股票代號", "0050"],
         ["資料來源", "Yahoo 股市"],
-        ["資料類型", "基本資料、持股分析、股利資料"],
+        ["資料類型", "基本資料、持股分析、股利資料、技術分析摘要"],
         ["行業比重資料時間", "2026/06/20"],
         ["前十大持股資料時間", "2026/05/01"],
+        ["技術分析資料時間", "2026/06/26 14:30"],
     ]
 
     industry_rows = [
@@ -177,13 +178,25 @@ def yahoo_0050():
         ["2023", "4.50", "3.64%", "2023/01、2023/07", "分兩次發放"],
     ]
 
+    technical_rows = [
+        ["股票名稱", "元大台灣50"],
+        ["股票代號", "0050"],
+        ["目前價格", "103.10"],
+        ["漲跌", "4.10"],
+        ["漲跌幅", "3.82%"],
+        ["成交量", "251,589"],
+        ["資料時間", "2026/06/26 14:30"],
+        ["分析週期", "5分、15分、30分、60分、日、週、月"],
+    ]
+
     return render_template(
         "yahoo_0050.html",
         basic_rows=basic_rows,
         industry_rows=industry_rows,
         asset_rows=asset_rows,
         holding_rows=holding_rows,
-        dividend_rows=dividend_rows
+        dividend_rows=dividend_rows,
+        technical_rows=technical_rows
     )
 
 
