@@ -1,4 +1,5 @@
 from flask import Flask, render_template
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -46,9 +47,41 @@ def etf_menu():
             "url": "/etf/basic",
             "description": "介紹 0050 的基金名稱、代號、追蹤指數與交易資訊。"
         },
+        {
+            "title": "TWSE 0050 配息資料",
+            "url": "/twse_0050",
+            "description": "從證交所資料頁讀取 0050 ETF 配息資料。"
+        },
     ]
 
     return render_template("etf_menu.html", etf_items=etf_items)
+
+
+@app.route("/twse_0050")
+def twse_0050():
+    url = "https://www.twse.com.tw/en/ETFortune-institute/dividendList?startDate=&stkNo=0050"
+
+    try:
+        tables = pd.read_html(url)
+
+        if len(tables) > 0:
+            df = tables[0]
+            headers = df.columns.tolist()
+            rows = df.values.tolist()
+        else:
+            headers = ["訊息"]
+            rows = [["找不到資料表"]]
+
+    except Exception as e:
+        headers = ["錯誤訊息"]
+        rows = [[str(e)]]
+
+    return render_template(
+        "twse_0050.html",
+        title="TWSE 0050 ETF 配息資料",
+        headers=headers,
+        rows=rows
+    )
 
 
 @app.route("/etf/dividend")
