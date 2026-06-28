@@ -1,20 +1,17 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from models import db, ETF0050
 from dotenv import load_dotenv
 import os
 
 import requests
 
-from bs4 import BeautifulSoup
-
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-
+load_dotenv()
 
 app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///app.db")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+db = SQLAlchemy(app)
 
 # 基本資料 (Basic Info) - 通常只有一筆或很少變動
 class ETFBasicInfo(db.Model):
@@ -55,12 +52,6 @@ def home():
     latest_trade = ETFTransactionSummary.query.order_by(ETFTransactionSummary.date.desc()).first()
     basic_info = ETFBasicInfo.query.filter_by(etf_code='0050').first()
     return render_template("home.html", latest_trade=latest_trade, basic_info=basic_info)
-
-
-@app.route("/html_tags")
-def html_tags():
-    return render_template("html_tags.html")
-
 
 @app.route("/charts")
 def charts():
