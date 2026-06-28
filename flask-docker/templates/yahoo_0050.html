@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>ETF 資料選單</title>
+    <title>Yahoo 0050 資料</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -11,16 +11,18 @@
         <a href="/about">專題介紹</a>
         <a href="/analysis">0050 分析</a>
         <a href="/etf">ETF 資料</a>
-        <a href="/twse_0050">TWSE 0050 配息資料</a>
+        <a href="/twse_0050">TWSE 0050 每日行情</a>
         <a href="/yahoo_0050">Yahoo 0050 資料</a>
     </nav>
 
-    <h1>0050 ETF 資料分類</h1>
+    <h1>Yahoo 0050 資料入口</h1>
+
+    <p>本頁整理 Yahoo 股市中 0050 的相關資料頁面，包含基本資料、持股分析與成交彙整。</p>
 
     <ul>
-        {% for item in etf_items %}
+        {% for item in yahoo_items %}
             <li>
-                <a href="{{ item.url }}">{{ item.title }}</a>
+                <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
                 ：{{ item.description }}
             </li>
         {% endfor %}

@@ -53,6 +53,11 @@ def etf_menu():
             "url": "/twse_0050",
             "description": "從證交所資料讀取 0050 的開盤價、最高價、最低價、收盤價與成交量。"
         },
+        {
+            "title": "Yahoo 0050 資料",
+            "url": "/yahoo_0050",
+            "description": "整理 Yahoo 股市中的 0050 基本資料、持股分析與成交彙整連結。"
+        },
     ]
 
     return render_template("etf_menu.html", etf_items=etf_items)
@@ -118,6 +123,29 @@ def twse_0050():
         headers=["項目", "內容"],
         rows=rows
     )
+
+
+@app.route("/yahoo_0050")
+def yahoo_0050():
+    yahoo_items = [
+        {
+            "title": "Yahoo 0050 基本資料",
+            "url": "https://tw.stock.yahoo.com/quote/0050.TW/profile",
+            "description": "查看 0050 的基金基本資料。"
+        },
+        {
+            "title": "Yahoo 0050 持股分析",
+            "url": "https://tw.stock.yahoo.com/quote/0050.TW/holding",
+            "description": "查看 0050 的持股組成與比例。"
+        },
+        {
+            "title": "Yahoo 0050 成交彙整",
+            "url": "https://tw.stock.yahoo.com/quote/0050.TW/time-sales",
+            "description": "查看 0050 的成交明細與即時交易資訊。"
+        },
+    ]
+
+    return render_template("yahoo_0050.html", yahoo_items=yahoo_items)
 
 
 @app.route("/etf/dividend")
