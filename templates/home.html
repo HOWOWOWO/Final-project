@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>ETF 投資分析網站</title>
+            <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}" />
+        </head>
+        <body>
+            {% extends "navbar.html" %}
+
+            {% block content %}
+            <div class="container my-5">
+                <h1 class="text-center mb-4">📊 0050 ETF 數據分析看板</h1>
+                <p class="text-muted text-center">透過自動化爬蟲與數學分析，探索台灣最大權值 ETF 的長期價值</p>
+
+                <div class="card shadow-sm mb-5">
+                    <div class="card-body">
+                        <h5 class="card-title">市價與淨值走勢（折溢價分析）</h5>
+                        <canvas id="etfChart" width="400" height="150"></canvas>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">最新歷史數據 (近期 30 筆)</h5>
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>日期</th>
+                                    <th>收盤價</th>
+                                    <th>淨值</th>
+                                    <th>折溢價 (%)</th>
+                                    <th>當期股利</th>
+                                    <th>現金殖利率 (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in records %}
+                                <tr>
+                                    <td>{{ r.date }}</td>
+                                    <td>{{ r.close_price }}</td>
+                                    <td>{{ r.net_value }}</td>
+                                    <td class="{{ 'text-danger' if r.discount_premium > 0 else 'text-success' }}">
+                                        {{ r.discount_premium }}%
+                                    </td>
+                                    <td>{{ r.dividend }}</td>
+                                    <td>{{ r.yield_rate }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endblock %}
+        </body>
+    </html>
