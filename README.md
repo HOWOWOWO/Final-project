@@ -106,21 +106,3 @@ Render 網站部署<br>
 
 本專題不只是課堂作業，而是希望能成為個人作品集的一部分。未來若持續擴充功能與改善介面，將有機會發展成一個實用的投資分析網站，讓資料分析、數學能力與程式技術真正結合，成為一個可以落地應用的專題作品。
 
----
-
-## 環境開發工具
-* **虛擬環境管理**：Docker / Docker Compose
-* **後端框架**：Flask
-* **前端樣板**：Jinja2 (HTML/CSS)
-
----
-
-## 專案啟動步驟
-
-請確保您的電腦已安裝 [Docker](https://www.docker.com/products/docker-desktop/) 與 Docker Compose。
-
-### 1. 啟動 Docker 容器
-在專案根目錄（包含 `docker-compose.yml` 的資料夾）開啟終端機 (Terminal/CMD)，輸入以下指令：
-
-```bash
-docker-compose up --build
