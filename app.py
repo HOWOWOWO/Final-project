@@ -4,6 +4,13 @@ from dotenv import load_dotenv
 import os
 
 import requests
+import pandas as pd
+
+from bs4 import BeautifulSoup
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 
 load_dotenv()
 
@@ -13,93 +20,119 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# 基本資料 (Basic Info) - 通常只有一筆或很少變動
+# ==================== ORM Models ====================
+
 class ETFBasicInfo(db.Model):
     __tablename__ = 'etf_basic_info'
     id = db.Column(db.Integer, primary_key=True)
-    etf_code = db.Column(db.String(10), unique=True, nullable=False)  # 0050
-    etf_name = db.Column(db.String(50), nullable=False)               # 元大台灣50
-    fund_size = db.Column(db.Float)                                   # 基金規模
-    listing_date = db.Column(db.Date)                                 # 上市日期
+    etf_code = db.Column(db.String(10), unique=True, nullable=False)
+    etf_name = db.Column(db.String(50), nullable=False)
+    fund_size = db.Column(db.Float)
+    listing_date = db.Column(db.Date)
 
-# 持股分析 (Holdings) - 一個日期會對應多個成分股 (如 50 檔)
 class ETFHoldings(db.Model):
     __tablename__ = 'etf_holdings'
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, nullable=False)                         # 資料日期
-    stock_code = db.Column(db.String(10), nullable=False)             # 成分股代號 
-    stock_name = db.Column(db.String(50), nullable=False)             # 成分股名稱 
-    weight = db.Column(db.Float, nullable=False)                      # 持股權重 (%)
+    date = db.Column(db.Date, nullable=False)
+    stock_code = db.Column(db.String(10), nullable=False)
+    stock_name = db.Column(db.String(50), nullable=False)
+    weight = db.Column(db.Float, nullable=False)
 
-# 成交彙整 (Daily Transactions) - 每日一筆行情
 class ETFTransactionSummary(db.Model):
     __tablename__ = 'etf_transaction_summary'
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, unique=True, nullable=False)            # 日期
-    open_price = db.Column(db.Float)                                  # 開盤價
-    high_price = db.Column(db.Float)                                  # 最高價
-    low_price = db.Column(db.Float)                                   # 最低價
-    close_price = db.Column(db.Float)                                 # 收盤價
-    volume = db.Column(db.BigInteger)                                 # 成交量
+    date = db.Column(db.Date, unique=True, nullable=False)
+    open_price = db.Column(db.Float)
+    high_price = db.Column(db.Float)
+    low_price = db.Column(db.Float)
+    close_price = db.Column(db.Float)
+    volume = db.Column(db.BigInteger)
 
 with app.app_context():
     db.create_all()
 
+# ==================== Routes ====================
 
 @app.route("/")
 def home():
-    # 撈取最新一筆成交行情作為首頁摘要
-    latest_trade = ETFTransactionSummary.query.order_by(ETFTransactionSummary.date.desc()).first()
-    basic_info = ETFBasicInfo.query.filter_by(etf_code='0050').first()
-    return render_template("home.html", latest_trade=latest_trade, basic_info=basic_info)
+    return render_template("home.html")
+
+
+@app.route("/api/time-sales")
+def get_time_sales_api():
+    url = "https://query1.finance.yahoo.com/v8/finance/chart/0050.TW"
+    params = {
+        "range": "1d",
+        "interval": "1m", # 獲取每分鐘的 Tick 彙整
+        "includeTimestamps": "true"
+    }
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
+    try:
+        response = requests.get(url, params=params, headers=headers)
+        if response.status_code != 200:
+            return jsonify({"status": "error", "message": "無法取得 Yahoo 資料"}), response.status_code
+            
+        data = response.json()
+        result = data['chart']['result'][0]
+        timestamps = result.get('timestamp', [])
+        indicators = result['indicators']['quote'][0]
+        
+        # 取得前一日收盤價 (用來計算當前 Tick 的漲跌)
+        meta = result.get('meta', {})
+        previous_close = meta.get('chartPreviousClose', 0)
+
+        data_list = []
+        for i in range(len(timestamps)):
+            close_price = indicators['close'][i]
+            volume = indicators['volume'][i]
+            
+            # 排除無效交易點
+            if close_price is None:
+                continue
+                
+            # 1. 時間格式化 (時:分)
+            t_str = pd.to_datetime(timestamps[i], unit='s').tz_localize('UTC').tz_convert('Asia/Taipei').strftime('%H:%M')
+            
+            # 2. 計算漲跌
+            change = round(close_price - previous_close, 2)
+            if change > 0:
+                change_str = f"▲ {change}"
+                direction = "up"
+            elif change < 0:
+                change_str = f"▼ {abs(change)}"
+                direction = "down"
+            else:
+                change_str = "0.00"
+                direction = "stay"
+                
+            # 3. 換算成台股習慣的「張數」 (Yahoo 原始資料是股數，除以 1000 變張數)
+            sheets = int(volume / 1000) if volume else 0
+
+            data_list.append({
+                "time": t_str,
+                "price": round(close_price, 2),
+                "change": change_str,
+                "direction": direction, # 供前端判斷顏色
+                "sheets": sheets
+            })
+
+        # 最新時間排在最上面
+        data_list.reverse()
+        return jsonify({"status": "success", "data": data_list})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route("/charts")
 def charts():
-    # 撈取最新 30 筆歷史紀錄供下方的表格呈現
-    records = ETFTransactionSummary.query.order_by(ETFTransactionSummary.date.desc()).limit(30).all()
-    return render_template("charts.html", records=records)
-    
+    return render_template("charts.html")
 
 @app.route("/analysis")
 def analysis():
-    basic_info = ETFBasicInfo.query.filter_by(etf_code='0050').first()
-    # 找出最新日期的持股明細
-    latest_date = db.session.query(db.func.max(ETFHoldings.date)).scalar()
-    holdings = []
-    if latest_date:
-        holdings = ETFHoldings.query.filter_by(date=latest_date).order_by(ETFHoldings.weight.desc()).all()
-    
-    return render_template("analysis.html", basic_info=basic_info, holdings=holdings, date=latest_date)
-
-@app.route("/admin")
-def admin():
-    # 統計基本資料筆數
-    basic_status = ETFBasicInfo.query.count()
-    
-    # 撈取持股分析最新一筆的日期
-    latest_holding = db.session.query(db.func.max(ETFHoldings.date)).scalar()
-    latest_holding_date = latest_holding.strftime('%Y-%m-%d') if latest_holding else None
-    
-    # 撈取成交彙整最新一筆的日期
-    latest_trade = db.session.query(db.func.max(ETFTransactionSummary.date)).scalar()
-    latest_trade_date = latest_trade.strftime('%Y-%m-%d') if latest_trade else None
-    
-    return render_template(
-        "admin.html", 
-        basic_status=basic_status, 
-        latest_holding_date=latest_holding_date, 
-        latest_trade_date=latest_trade_date
-    )
-
-@app.route("/api/chart-data")
-def chart_data():
-    # 提供給 Chart.js 畫圖用的歷史行情數據
-    data = ETFTransactionSummary.query.order_by(ETFTransactionSummary.date.asc()).all()
-    return jsonify({
-        "dates": [r.date.strftime('%Y-%m-%d') for r in data],
-        "prices": [r.close_price for r in data],
-        "volumes": [r.volume for r in data]
-    })
+    return render_template("analysis.html")
 
 
 if __name__ == "__main__":
