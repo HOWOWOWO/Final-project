@@ -1,7 +1,6 @@
 from flask import Flask, render_template
 import requests
 from datetime import datetime
-import yfinance as yf
 
 app = Flask(__name__)
 
@@ -55,9 +54,9 @@ def etf_menu():
             "description": "從證交所資料讀取 0050 的開盤價、最高價、最低價、收盤價與成交量。"
         },
         {
-            "title": "Yahoo 0050 資料",
+            "title": "Yahoo 0050 持股分析",
             "url": "/yahoo_0050",
-            "description": "從 Yahoo Finance 讀取 0050 的基本資料與成交彙整。"
+            "description": "整理 Yahoo 股市中的 0050 行業比重、資產分佈與前十大持股。"
         },
     ]
 
@@ -127,61 +126,55 @@ def twse_0050():
 
 @app.route("/yahoo_0050")
 def yahoo_0050():
-    stock = yf.Ticker("0050.TW")
+    basic_rows = [
+        ["股票名稱", "元大台灣50"],
+        ["股票代號", "0050"],
+        ["資料來源", "Yahoo 股市"],
+        ["資料類型", "基本資料、持股分析"],
+        ["行業比重資料時間", "2026/06/20"],
+        ["前十大持股資料時間", "2026/05/01"],
+    ]
 
-    try:
-        info = stock.info
-        history = stock.history(period="5d")
+    industry_rows = [
+        ["半導體業", "69.49%"],
+        ["電子零組件業", "10.31%"],
+        ["金融保險", "7.82%"],
+        ["其他電子業", "4.36%"],
+        ["電腦及週邊設備業", "3.82%"],
+        ["其餘行業 - 通信網路業", "2.05%"],
+        ["其餘行業 - 塑膠工業", "0.66%"],
+        ["其餘行業 - 光電業", "0.47%"],
+        ["其餘行業 - 食品工業", "0.36%"],
+        ["其餘行業 - 其他產業", "0.20%"],
+        ["其餘行業 - 航運業", "0.20%"],
+        ["其餘行業 - 油電燃氣業", "0.06%"],
+    ]
 
-        basic_rows = [
-            ["股票代號", "0050.TW"],
-            ["股票名稱", info.get("longName", "元大台灣50")],
-            ["交易所", info.get("exchange", "TWSE")],
-            ["幣別", info.get("currency", "TWD")],
-            ["目前價格", info.get("currentPrice", "無資料")],
-            ["前一日收盤價", info.get("previousClose", "無資料")],
-            ["開盤價", info.get("open", "無資料")],
-            ["最高價", info.get("dayHigh", "無資料")],
-            ["最低價", info.get("dayLow", "無資料")],
-            ["成交量", info.get("volume", "無資料")],
-        ]
+    asset_rows = [
+        ["股票", "99.72%"],
+        ["現金", "0.20%"],
+        ["債券", "0.08%"],
+        ["其他", "0.00%"],
+    ]
 
-        price_rows = []
-
-        for date, row in history.iterrows():
-            price_rows.append([
-                date.strftime("%Y-%m-%d"),
-                round(row["Open"], 2),
-                round(row["High"], 2),
-                round(row["Low"], 2),
-                round(row["Close"], 2),
-                int(row["Volume"]),
-            ])
-
-        holding_rows = [
-            ["資料來源", "Yahoo Finance / yfinance"],
-            ["說明", "Yahoo Finance 對台灣 ETF 的持股資料不一定完整提供，因此此區塊作為持股分析說明。"],
-            ["0050 類型", "台灣大型權值股 ETF"],
-            ["主要投資方向", "追蹤臺灣50指數，投資台灣市值較大的上市公司"],
-        ]
-
-    except Exception as e:
-        basic_rows = [
-            ["錯誤", str(e)]
-        ]
-
-        price_rows = [
-            ["無資料", "無資料", "無資料", "無資料", "無資料", "無資料"]
-        ]
-
-        holding_rows = [
-            ["錯誤", "Yahoo 資料讀取失敗"]
-        ]
+    holding_rows = [
+        ["1", "台積電", "58.28%"],
+        ["2", "聯發科", "6.42%"],
+        ["3", "台達電", "4.81%"],
+        ["4", "鴻海", "3.57%"],
+        ["5", "日月光投控", "2.04%"],
+        ["6", "聯電", "1.70%"],
+        ["7", "台光電", "1.49%"],
+        ["8", "欣興", "1.43%"],
+        ["9", "智邦", "1.22%"],
+        ["10", "國巨*", "1.16%"],
+    ]
 
     return render_template(
         "yahoo_0050.html",
         basic_rows=basic_rows,
-        price_rows=price_rows,
+        industry_rows=industry_rows,
+        asset_rows=asset_rows,
         holding_rows=holding_rows
     )
 
