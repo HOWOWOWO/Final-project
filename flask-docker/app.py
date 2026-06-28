@@ -1,6 +1,7 @@
 from flask import Flask, render_template
 import requests
 from datetime import datetime
+import yfinance as yf
 
 app = Flask(__name__)
 
@@ -56,7 +57,7 @@ def etf_menu():
         {
             "title": "Yahoo 0050 資料",
             "url": "/yahoo_0050",
-            "description": "整理 Yahoo 股市中的 0050 基本資料、持股分析與成交彙整連結。"
+            "description": "從 Yahoo Finance 讀取 0050 的基本資料與成交彙整。"
         },
     ]
 
@@ -67,7 +68,6 @@ def etf_menu():
 def twse_0050():
     stock_no = "0050"
 
-    # 自動抓目前月份，例如 2026 年 6 月會變成 20260601
     today = datetime.today()
     query_date = today.strftime("%Y%m01")
 
@@ -127,25 +127,63 @@ def twse_0050():
 
 @app.route("/yahoo_0050")
 def yahoo_0050():
-    yahoo_items = [
-        {
-            "title": "Yahoo 0050 基本資料",
-            "url": "https://tw.stock.yahoo.com/quote/0050.TW/profile",
-            "description": "查看 0050 的基金基本資料。"
-        },
-        {
-            "title": "Yahoo 0050 持股分析",
-            "url": "https://tw.stock.yahoo.com/quote/0050.TW/holding",
-            "description": "查看 0050 的持股組成與比例。"
-        },
-        {
-            "title": "Yahoo 0050 成交彙整",
-            "url": "https://tw.stock.yahoo.com/quote/0050.TW/time-sales",
-            "description": "查看 0050 的成交明細與即時交易資訊。"
-        },
-    ]
+    stock = yf.Ticker("0050.TW")
 
-    return render_template("yahoo_0050.html", yahoo_items=yahoo_items)
+    try:
+        info = stock.info
+        history = stock.history(period="5d")
+
+        basic_rows = [
+            ["股票代號", "0050.TW"],
+            ["股票名稱", info.get("longName", "元大台灣50")],
+            ["交易所", info.get("exchange", "TWSE")],
+            ["幣別", info.get("currency", "TWD")],
+            ["目前價格", info.get("currentPrice", "無資料")],
+            ["前一日收盤價", info.get("previousClose", "無資料")],
+            ["開盤價", info.get("open", "無資料")],
+            ["最高價", info.get("dayHigh", "無資料")],
+            ["最低價", info.get("dayLow", "無資料")],
+            ["成交量", info.get("volume", "無資料")],
+        ]
+
+        price_rows = []
+
+        for date, row in history.iterrows():
+            price_rows.append([
+                date.strftime("%Y-%m-%d"),
+                round(row["Open"], 2),
+                round(row["High"], 2),
+                round(row["Low"], 2),
+                round(row["Close"], 2),
+                int(row["Volume"]),
+            ])
+
+        holding_rows = [
+            ["資料來源", "Yahoo Finance / yfinance"],
+            ["說明", "Yahoo Finance 對台灣 ETF 的持股資料不一定完整提供，因此此區塊作為持股分析說明。"],
+            ["0050 類型", "台灣大型權值股 ETF"],
+            ["主要投資方向", "追蹤臺灣50指數，投資台灣市值較大的上市公司"],
+        ]
+
+    except Exception as e:
+        basic_rows = [
+            ["錯誤", str(e)]
+        ]
+
+        price_rows = [
+            ["無資料", "無資料", "無資料", "無資料", "無資料", "無資料"]
+        ]
+
+        holding_rows = [
+            ["錯誤", "Yahoo 資料讀取失敗"]
+        ]
+
+    return render_template(
+        "yahoo_0050.html",
+        basic_rows=basic_rows,
+        price_rows=price_rows,
+        holding_rows=holding_rows
+    )
 
 
 @app.route("/etf/dividend")
