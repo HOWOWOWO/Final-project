@@ -1,5 +1,6 @@
 from flask import Flask, render_template
-import pandas as pd
+import requests
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -48,9 +49,9 @@ def etf_menu():
             "description": "介紹 0050 的基金名稱、代號、追蹤指數與交易資訊。"
         },
         {
-            "title": "TWSE 0050 配息資料",
+            "title": "TWSE 0050 每日行情",
             "url": "/twse_0050",
-            "description": "從證交所資料頁讀取 0050 ETF 配息資料。"
+            "description": "從證交所資料讀取 0050 的開盤價、最高價、最低價、收盤價與成交量。"
         },
     ]
 
@@ -59,27 +60,62 @@ def etf_menu():
 
 @app.route("/twse_0050")
 def twse_0050():
-    url = "https://www.twse.com.tw/en/ETFortune-institute/dividendList?startDate=&stkNo=0050"
+    stock_no = "0050"
+
+    # 自動抓目前月份，例如 2026 年 6 月會變成 20260601
+    today = datetime.today()
+    query_date = today.strftime("%Y%m01")
+
+    url = "https://www.twse.com.tw/rwd/zh/afterTrading/STOCK_DAY"
+
+    params = {
+        "date": query_date,
+        "stockNo": stock_no,
+        "response": "json"
+    }
+
+    headers_request = {
+        "User-Agent": "Mozilla/5.0"
+    }
 
     try:
-        tables = pd.read_html(url)
+        response = requests.get(
+            url,
+            params=params,
+            headers=headers_request,
+            timeout=10
+        )
 
-        if len(tables) > 0:
-            df = tables[0]
-            headers = df.columns.tolist()
-            rows = df.values.tolist()
+        data = response.json()
+
+        if data.get("stat") == "OK" and len(data.get("data", [])) > 0:
+            latest = data["data"][-1]
+
+            rows = [
+                ["股票代號", stock_no],
+                ["股票名稱", "元大台灣50"],
+                ["日期", latest[0]],
+                ["成交量", latest[1]],
+                ["開盤價", latest[3]],
+                ["最高價", latest[4]],
+                ["最低價", latest[5]],
+                ["收盤價", latest[6]],
+            ]
+
         else:
-            headers = ["訊息"]
-            rows = [["找不到資料表"]]
+            rows = [
+                ["錯誤", "查不到 0050 的資料，可能今天還沒有交易資料。"]
+            ]
 
     except Exception as e:
-        headers = ["錯誤訊息"]
-        rows = [[str(e)]]
+        rows = [
+            ["錯誤", str(e)]
+        ]
 
     return render_template(
-        "twse_0050.html",
-        title="TWSE 0050 ETF 配息資料",
-        headers=headers,
+        "etf_table.html",
+        title="0050 每日行情資料",
+        headers=["項目", "內容"],
         rows=rows
     )
 
@@ -92,6 +128,7 @@ def etf_dividend():
         ["2024", "4.00", "2024/01、2024/07", "分兩次發放", "2.79%"],
         ["2023", "4.50", "2023/01、2023/07", "分兩次發放", "3.64%"],
     ]
+
     return render_template(
         "etf_table.html",
         title="0050 歷年股利",
@@ -108,6 +145,7 @@ def etf_yield():
         ["2024", "4.00", "約 2.79%", "殖利率提高"],
         ["2023", "4.50", "約 3.64%", "配息表現較高"],
     ]
+
     return render_template(
         "etf_table.html",
         title="0050 現金殖利率",
@@ -125,6 +163,7 @@ def etf_constituent():
         ["2317", "鴻海", "電子製造", "前五大成分股"],
         ["3711", "日月光投控", "半導體封測", "前五大成分股"],
     ]
+
     return render_template(
         "etf_table.html",
         title="0050 成分股",
@@ -141,6 +180,7 @@ def etf_premium():
         ["2026/06/24", "107.15", "106.26", "0.89", "0.84%"],
         ["2026/06/23", "110.10", "109.68", "0.42", "0.38%"],
     ]
+
     return render_template(
         "etf_table.html",
         title="0050 淨值及折溢價",
@@ -158,6 +198,7 @@ def etf_basic():
         ["投資特色", "分散投資台灣大型權值股"],
         ["適合族群", "長期投資、穩健型投資人"],
     ]
+
     return render_template(
         "etf_table.html",
         title="0050 基本資料",
